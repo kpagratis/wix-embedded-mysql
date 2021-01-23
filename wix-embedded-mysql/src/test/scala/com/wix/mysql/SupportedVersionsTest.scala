@@ -27,7 +27,8 @@ class SupportedVersionsTest extends IntegrationTest {
 
       val mysqld: EmbeddedMysql = start(anEmbeddedMysql(config).addSchema("aschema"))
 
-      mysqld must beAvailableOn(config, "aschema")
+      mysqld must beAvailableToRwOn(config, "aschema")
+      mysqld must beAvailableToRoOn(config, "aschema")
 
       log must not(contain("Something bad happened."))
     }

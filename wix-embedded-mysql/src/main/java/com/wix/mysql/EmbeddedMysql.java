@@ -46,7 +46,9 @@ public class EmbeddedMysql {
         try {
             executable.start();
             getClient(SCHEMA, mysqldConfig.getCharset()).executeCommands(
-                    format("CREATE USER '%s'@'%%' IDENTIFIED BY '%s';", mysqldConfig.getUsername(), mysqldConfig.getPassword()));
+                    format("CREATE USER '%s'@'%%' IDENTIFIED BY '%s';", mysqldConfig.getRWUsername(), mysqldConfig.getRWPassword()));
+            getClient(SCHEMA, mysqldConfig.getCharset()).executeCommands(
+                    format("CREATE USER '%s'@'%%' IDENTIFIED BY '%s';", mysqldConfig.getROUsername(), mysqldConfig.getROPassword()));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -88,7 +90,9 @@ public class EmbeddedMysql {
         getClient(SystemDefaults.SCHEMA, effectiveCharset).executeCommands(
                 format("CREATE DATABASE `%s` CHARACTER SET = %s COLLATE = %s;",
                         schema.getName(), effectiveCharset.getCharset(), effectiveCharset.getCollate()),
-                format("GRANT ALL ON `%s`.* TO '%s'@'%%';", schema.getName(), config.getUsername()));
+                format("GRANT ALL ON `%s`.* TO '%s'@'%%';", schema.getName(), config.getRWUsername()));
+        getClient(SystemDefaults.SCHEMA, effectiveCharset).executeCommands(
+                format("GRANT SELECT ON `%s`.* TO '%s'@'%%';", schema.getName(), config.getROUsername()));
 
         MysqlClient client = getClient(schema.getName(), effectiveCharset);
         client.executeScripts(schema.getScripts());

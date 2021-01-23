@@ -20,8 +20,10 @@ class MysqldConfigTest extends SpecWithJUnit {
       mysqldConfig.getPort mustEqual 3310
       mysqldConfig.getVersion mustEqual v5_6_latest
       mysqldConfig.getCharset mustEqual defaults()
-      mysqldConfig.getUsername mustEqual "auser"
-      mysqldConfig.getPassword mustEqual "sa"
+      mysqldConfig.getRWUsername mustEqual "rwUser"
+      mysqldConfig.getRWPassword mustEqual "rw"
+      mysqldConfig.getROUsername mustEqual "roUser"
+      mysqldConfig.getROPassword mustEqual "ro"
       mysqldConfig.getTimeZone mustEqual TimeZone.getTimeZone("UTC")
       mysqldConfig.getTimeout(TimeUnit.SECONDS) mustEqual 30
     }
@@ -30,15 +32,18 @@ class MysqldConfigTest extends SpecWithJUnit {
       val mysqldConfig = aMysqldConfig(v5_6_latest)
         .withPort(1111)
         .withCharset(LATIN1)
-        .withUser("otheruser", "otherpassword")
+        .withRWUser("otheruser", "otherpassword")
+        .withROUser("yetotheruser", "yetotherpassword")
         .withTimeZone("Europe/Vilnius")
         .withTimeout(20, TimeUnit.SECONDS)
         .build()
 
       mysqldConfig.getPort mustEqual 1111
       mysqldConfig.getCharset mustEqual LATIN1
-      mysqldConfig.getUsername mustEqual "otheruser"
-      mysqldConfig.getPassword mustEqual "otherpassword"
+      mysqldConfig.getRWUsername mustEqual "otheruser"
+      mysqldConfig.getRWPassword mustEqual "otherpassword"
+      mysqldConfig.getROUsername mustEqual "yetotheruser"
+      mysqldConfig.getROPassword mustEqual "yetotherpassword"
       mysqldConfig.getTimeZone mustEqual TimeZone.getTimeZone("Europe/Vilnius")
       mysqldConfig.getTimeout(TimeUnit.MILLISECONDS) mustEqual 20000
     }
@@ -62,9 +67,15 @@ class MysqldConfigTest extends SpecWithJUnit {
       mysqldConfig.getPort mustNotEqual 3310
     }
 
-    "fail if building with user 'root'" in {
+    "fail if building with rwuser 'root'" in {
       aMysqldConfig(v5_6_latest)
-        .withUser("root", "doesnotmatter")
+        .withRWUser("root", "doesnotmatter")
+        .build() must throwA[IllegalArgumentException](message = "Usage of username 'root' is forbidden")
+    }
+
+    "fail if building with rouser 'root'" in {
+      aMysqldConfig(v5_6_latest)
+        .withRWUser("root", "doesnotmatter")
         .build() must throwA[IllegalArgumentException](message = "Usage of username 'root' is forbidden")
     }
 

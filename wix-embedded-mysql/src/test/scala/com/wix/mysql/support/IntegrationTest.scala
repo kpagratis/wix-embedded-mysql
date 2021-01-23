@@ -92,7 +92,7 @@ trait JdbcSupport {
   self: IntegrationTest =>
 
   def aDataSource(config: MysqldConfig, schema: String): DataSource =
-    aDataSource(config.getUsername, config.getPassword, config.getPort, schema)
+    aDataSource(config.getRWUsername, config.getRWPassword, config.getPort, schema)
 
   def aDataSource(user: String, password: String, port: Int, schema: String): DataSource = {
     val dataSource: BasicDataSource = new BasicDataSource

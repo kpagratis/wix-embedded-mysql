@@ -20,21 +20,25 @@ public class MysqldConfig extends ExecutableProcessConfig {
 
     private final int port;
     private final Charset charset;
-    private final User user;
+    private final User rwUser;
+    private final User roUser;
     private final TimeZone timeZone;
     private final Timeout timeout;
     private final List<ServerVariable> serverVariables;
     private final String tempDir;
+    private final boolean enforceGtid;
 
     protected MysqldConfig(
             final IVersion version,
             final int port,
             final Charset charset,
-            final User user,
+            final User rwUser,
+            final User roUser,
             final TimeZone timeZone,
             final Timeout timeout,
             final List<ServerVariable> serverVariables,
-            final String tempDir) {
+            final String tempDir,
+            final Boolean enforceGtid) {
         super(version, new ISupportConfig() {
             public String getName() {
                 return "mysqld";
@@ -49,17 +53,23 @@ public class MysqldConfig extends ExecutableProcessConfig {
             }
         });
 
-        if (user.name.equals("root")) {
+        if (rwUser.name.equals("root")) {
+            throw new IllegalArgumentException("Usage of username 'root' is forbidden as it's reserved for system use");
+        }
+
+        if (roUser.name.equals("root")) {
             throw new IllegalArgumentException("Usage of username 'root' is forbidden as it's reserved for system use");
         }
 
         this.port = port;
         this.charset = charset;
-        this.user = user;
+        this.rwUser = rwUser;
+        this.roUser = roUser;
         this.timeZone = timeZone;
         this.timeout = timeout;
         this.serverVariables = serverVariables;
         this.tempDir = tempDir;
+        this.enforceGtid = enforceGtid;
     }
 
     public Version getVersion() {
@@ -78,12 +88,20 @@ public class MysqldConfig extends ExecutableProcessConfig {
         return this.timeout.to(target);
     }
 
-    public String getUsername() {
-        return user.name;
+    public String getRWUsername() {
+        return rwUser.name;
     }
 
-    public String getPassword() {
-        return user.password;
+    public String getRWPassword() {
+        return rwUser.password;
+    }
+
+    public String getROUsername() {
+        return roUser.name;
+    }
+
+    public String getROPassword() {
+        return roUser.password;
     }
 
     public TimeZone getTimeZone() {
@@ -96,6 +114,10 @@ public class MysqldConfig extends ExecutableProcessConfig {
 
     public String getTempDir() {
         return tempDir;
+    }
+
+    public Boolean getEnforceGtid() {
+        return enforceGtid;
     }
 
     public static Builder aMysqldConfig(final Version version) {
@@ -111,11 +133,13 @@ public class MysqldConfig extends ExecutableProcessConfig {
         private IVersion version;
         private int port = 3310;
         private Charset charset = Charset.defaults();
-        private User user = new User("auser", "sa");
+        private User rwUser = new User("rwUser", "rw");
+        private User roUser = new User("roUser", "ro");
         private TimeZone timeZone = TimeZone.getTimeZone("UTC");
         private Timeout timeout = new Timeout(30, SECONDS);
         private final List<ServerVariable> serverVariables = new ArrayList<>();
         private String tempDir = "target/";
+        private Boolean enforceGtid = true;
 
         public Builder(IVersion version) {
             this.version = version;
@@ -143,8 +167,13 @@ public class MysqldConfig extends ExecutableProcessConfig {
             return this;
         }
 
-        public Builder withUser(String username, String password) {
-            this.user = new User(username, password);
+        public Builder withRWUser(String username, String password) {
+            this.rwUser = new User(username, password);
+            return this;
+        }
+
+        public Builder withROUser(String username, String password) {
+            this.roUser = new User(username, password);
             return this;
         }
 
@@ -192,9 +221,13 @@ public class MysqldConfig extends ExecutableProcessConfig {
             return this;
         }
 
+        public Builder withEnforceGtid(Boolean enforceGtid) {
+            this.enforceGtid = enforceGtid;
+            return this;
+        }
 
         public MysqldConfig build() {
-            return new MysqldConfig(version, port, charset, user, timeZone, timeout, serverVariables, tempDir);
+            return new MysqldConfig(version, port, charset, rwUser, roUser, timeZone, timeout, serverVariables, tempDir, enforceGtid);
         }
     }
 

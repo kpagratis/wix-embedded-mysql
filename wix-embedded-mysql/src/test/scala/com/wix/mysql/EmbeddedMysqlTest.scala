@@ -2,10 +2,10 @@ package com.wix.mysql
 
 import java.io.File
 import java.util.concurrent.TimeUnit
-
 import com.wix.mysql.EmbeddedMysql._
 import com.wix.mysql.ScriptResolver.classPathScript
 import com.wix.mysql.config.Charset._
+import com.wix.mysql.config.DownloadConfig
 import com.wix.mysql.config.DownloadConfig.aDownloadConfig
 import com.wix.mysql.config.MysqldConfig.{SystemDefaults, aMysqldConfig}
 import com.wix.mysql.config.ProxyFactory.aHttpProxy
@@ -14,7 +14,6 @@ import com.wix.mysql.distribution.Version
 import com.wix.mysql.exceptions.CommandFailedException
 import com.wix.mysql.support.IntegrationTest._
 import com.wix.mysql.support.{HttpProxyServerSupport, IntegrationTest}
-
 import scala.collection.JavaConverters._
 
 
@@ -29,7 +28,8 @@ class EmbeddedMysqlTest extends IntegrationTest with HttpProxyServerSupport {
 
       mysqld must
         haveCharsetOf(UTF8MB4) and
-        beAvailableOn(3310, "auser", "sa", SystemDefaults.SCHEMA) and
+        beAvailableOn(3310, "rwUser", "rw", SystemDefaults.SCHEMA) and
+        beAvailableOn(3310, "roUser", "ro", SystemDefaults.SCHEMA) and
         haveServerTimezoneMatching("UTC") and
         haveSystemVariable("basedir", contain(pathFor("/target/", "/mysql-5.7-")))
     }
@@ -38,7 +38,8 @@ class EmbeddedMysqlTest extends IntegrationTest with HttpProxyServerSupport {
       val tempDir = System.getProperty("java.io.tmpdir")
       val config = testConfigBuilder()
         .withCharset(LATIN1)
-        .withUser("zeUser", "zePassword")
+        .withRWUser("zeUser", "zePassword")
+        .withROUser("zeOtherUser", "zeOtherPassword")
         .withPort(1112)
         .withTimeZone("US/Michigan")
         .withTempDir(tempDir)
@@ -49,6 +50,7 @@ class EmbeddedMysqlTest extends IntegrationTest with HttpProxyServerSupport {
       mysqld must
         haveCharsetOf(LATIN1) and
         beAvailableOn(1112, "zeUser", "zePassword", SystemDefaults.SCHEMA) and
+        beAvailableOn(1112, "zeOtherUser", "zeOtherPassword", SystemDefaults.SCHEMA) and
         haveServerTimezoneMatching("US/Michigan") and
         haveSystemVariable("basedir", contain(pathFor(tempDir, "/mysql-5.7-")))
     }
@@ -68,7 +70,8 @@ class EmbeddedMysqlTest extends IntegrationTest with HttpProxyServerSupport {
             .build())
           .addSchema("aschema"))
 
-        mysqld must beAvailableOn(config, "aschema")
+        mysqld must beAvailableToRwOn(config, "aschema")
+        mysqld must beAvailableToRoOn(config, "aschema")
         proxy.wasDownloaded must beTrue
       }
     }
@@ -126,7 +129,8 @@ class EmbeddedMysqlTest extends IntegrationTest with HttpProxyServerSupport {
 
       mysqld must
         haveSchemaCharsetOf(UTF8MB4, "aSchema") and
-        beAvailableOn(3310, "auser", "sa", andSchema = "aSchema")
+        beAvailableOn(3310, "rwUser", "rw", andSchema = "aSchema") and
+        beAvailableOn(3310, "roUser", "ro", andSchema = "aSchema")
     }
 
     "use custom values" in {
@@ -139,7 +143,8 @@ class EmbeddedMysqlTest extends IntegrationTest with HttpProxyServerSupport {
 
       mysqld must
         haveSchemaCharsetOf(LATIN1, "aSchema") and
-        beAvailableOn(3310, "auser", "sa", andSchema = "aSchema")
+        beAvailableOn(3310, "rwUser", "rw", andSchema = "aSchema") and
+        beAvailableOn(3310, "roUser", "ro", andSchema = "aSchema")
     }
 
     "inherit schema charset from instance" in {
@@ -150,7 +155,8 @@ class EmbeddedMysqlTest extends IntegrationTest with HttpProxyServerSupport {
 
       mysqld must
         haveSchemaCharsetOf(LATIN1, "aSchema") and
-        beAvailableOn(3310, "auser", "sa", andSchema = "aSchema")
+        beAvailableOn(3310, "rwUser", "rw", andSchema = "aSchema") and
+        beAvailableOn(3310, "roUser", "ro", andSchema = "aSchema")
     }
 
     "apply migrations when providing single file" in {

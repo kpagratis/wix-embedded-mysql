@@ -50,7 +50,7 @@ public class JavaUsageExamplesTest {
         MysqldConfig config = aMysqldConfig(v5_7_latest)
                 .withCharset(UTF8)
                 .withPort(2215)
-                .withUser("differentUser", "anotherPasword")
+                .withRWUser("differentUser", "anotherPasword")
                 .build();
 
         EmbeddedMysql mysqld = anEmbeddedMysql(config)

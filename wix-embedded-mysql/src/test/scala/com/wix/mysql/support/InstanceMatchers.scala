@@ -51,6 +51,9 @@ trait InstanceMatchers extends Matchers {
       aSelect[java.lang.Long](aDataSource(withUser, password, port, andSchema), "select 1;") == 1
     }
 
-  def beAvailableOn(config: MysqldConfig, andSchema: String): Matcher[EmbeddedMysql] =
-    beAvailableOn(config.getPort, config.getUsername, config.getPassword, andSchema)
+  def beAvailableToRwOn(config: MysqldConfig, andSchema: String): Matcher[EmbeddedMysql] =
+    beAvailableOn(config.getPort, config.getRWUsername, config.getRWPassword, andSchema)
+
+  def beAvailableToRoOn(config: MysqldConfig, andSchema: String): Matcher[EmbeddedMysql] =
+    beAvailableOn(config.getPort, config.getROUsername, config.getROPassword, andSchema)
 }
